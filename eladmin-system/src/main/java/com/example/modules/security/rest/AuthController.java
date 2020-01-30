@@ -1,23 +1,31 @@
 package com.example.modules.security.rest;
 
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.crypto.asymmetric.KeyType;
+import cn.hutool.crypto.asymmetric.RSA;
 import com.example.annotation.AnonymousAccess;
 import com.example.modules.security.config.SecurityProperties;
 import com.example.modules.security.security.TokenProvider;
 import com.example.modules.security.service.OnlineUserService;
+import com.example.modules.security.vo.AuthUser;
+import com.example.modules.security.vo.JwtUser;
 import com.example.utils.RedisUtils;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -86,5 +94,42 @@ public class AuthController {
         return ResponseEntity.ok(imgResult);
     }
 
+    @ApiOperation("登入授权")
+    @AnonymousAccess
+    @PostMapping(value = "/login")
+    public ResponseEntity<Object> login(@Validated @RequestBody AuthUser authUser, HttpServletRequest request){
+        // 密码解密
+        log.info("-----------authUser:"+authUser.toString());
+        RSA rsa = new RSA(privateKey, null);
+        //byte[] decrypt = rsa.decrypt(authUser.getPassword(), KeyType.PrivateKey);
+        //String password = new String(decrypt);
+        String password = "123456";
+        log.info("------------------password:"+password);
+
+        // 验证密码和用户
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authUser.getUsername(), password);
+        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        // 交给容器管理
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // 生成token
+        String token = tokenProvider.createToken(authentication);
+        log.info("------------------token:"+token);
+        final JwtUser jwtUser = (JwtUser)authentication.getPrincipal();
+        // 保存在线信息
+        onlineUserService.save(jwtUser,token,request);
+
+        // 返回token和用户信息
+        Map<String,Object> authInfo = new HashMap<String,Object>(){{
+            put("token",properties.getTokenStartWith()+token);
+            put("jwtUser",jwtUser);
+        }};
+        if (singleLogin){
+            // 踢掉之前登入的
+            onlineUserService.checkLoginOnUser(authUser.getUsername(),token);
+        }
+        return ResponseEntity.ok(authInfo);
+
+    }
 
 }

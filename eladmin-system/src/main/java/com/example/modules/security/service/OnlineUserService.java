@@ -45,7 +45,7 @@ public class OnlineUserService {
         OnlineUser onlineUser = null;
         try{
 
-            onlineUser = new OnlineUser(jwtUser.getUsername(),jwtUser.getNickName(),job,ip,browser,cityInfo, EncryptUtils.desDecrypt(token),new Date());
+            onlineUser = new OnlineUser(jwtUser.getUsername(),jwtUser.getNickName(),job,ip,browser,cityInfo, EncryptUtils.desEncrypt(token),new Date());
 
         }catch (Exception e){
 
