@@ -4,6 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
 import cn.hutool.crypto.asymmetric.RSA;
 import com.example.annotation.AnonymousAccess;
+import com.example.aop.log.Log;
 import com.example.modules.security.config.SecurityProperties;
 import com.example.modules.security.security.TokenProvider;
 import com.example.modules.security.service.OnlineUserService;
@@ -14,7 +15,6 @@ import com.example.utils.SecurityUtils;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -95,6 +95,7 @@ public class AuthController {
         return ResponseEntity.ok(imgResult);
     }
 
+    @Log
     @ApiOperation("登入授权")
     @AnonymousAccess
     @PostMapping(value = "/login")
