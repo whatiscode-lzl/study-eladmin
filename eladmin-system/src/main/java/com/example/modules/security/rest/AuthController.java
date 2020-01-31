@@ -10,6 +10,7 @@ import com.example.modules.security.service.OnlineUserService;
 import com.example.modules.security.vo.AuthUser;
 import com.example.modules.security.vo.JwtUser;
 import com.example.utils.RedisUtils;
+import com.example.utils.SecurityUtils;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -131,5 +132,13 @@ public class AuthController {
         return ResponseEntity.ok(authInfo);
 
     }
+
+    @ApiOperation("获取用户信息")
+    @GetMapping(value="/info")
+    public ResponseEntity<Object> getUserInfo(){
+        JwtUser jwtUser = (JwtUser)userDetailsService.loadUserByUsername(SecurityUtils.getUserName());
+        return ResponseEntity.ok(jwtUser);
+    }
+
 
 }
